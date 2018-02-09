@@ -6,6 +6,11 @@
 #include <chromaprint.h>
 #include "audio/ffmpeg_audio_reader.h"
 #include "utils/scope_exit.h"
+#include <jni.h>
+#include <string>
+
+#include <stdlib.h>
+
 
 #ifdef _WIN32
 #include <windows.h>
@@ -428,6 +433,71 @@ int fpcalc_main(int argc, char **argv) {
     }
 
     return 0;
+}
+
+static char *retval = NULL;;
+char * append_string(char * old, const char * newone)
+{
+const size_t old_len = old ? strlen(old) : 0;
+const size_t newone_len = strlen(newone);
+const size_t out_len = old_len + newone_len + 1;
+char *out = (char*)malloc(out_len);
+if (old_len) memcpy(out, old, old_len);
+memcpy(out + old_len, newone, newone_len + 1);
+if (old_len) free(old);
+return out;
+}
+
+void jni_output(const char* format, ...)
+{
+    va_list argptr;
+    va_start(argptr, format);
+    int size = vsnprintf(NULL, 0, format, argptr);
+    char buffer[size + 1];
+    vsprintf(buffer, format, argptr);
+    retval = append_string(retval,buffer);
+    va_end(argptr);
+}
+
+extern "C"
+JNIEXPORT jstring
+
+JNICALL
+Java_com_geecko_fpcalc_MainActivity_fpCalc(
+        JNIEnv *env,
+        jobject thiz,
+        jobjectArray args) {
+    int i;
+    int argc = env->GetArrayLength(args) + 1;
+    char **argv = (char**)malloc(argc * sizeof(char *));
+    argv[0] = (char *) "fpCalc";
+    retval = NULL;
+    for (i=1; i<argc; i++)
+    {
+        jstring js = (jstring)env->GetObjectArrayElement(args,i-1);
+        char *cs = (char *)env->GetStringUTFChars(js, 0);
+        argv[i] = (char*)malloc(strlen(cs) + 1);
+        strcpy(argv[i],cs);
+        env->ReleaseStringUTFChars(js, cs);
+        env->DeleteLocalRef(js);
+    }
+
+    int rslt = fpcalc_main(argc,argv);
+   /* if (rslt == 1)
+    {
+        jni_output("error_fpcalc_main=%d\n",rslt);
+    }
+    jstring final_result_value = env->NewStringUTF(retval);
+    free(retval);
+    retval = NULL;
+
+    for (i=1; i<argc; i++)
+    {
+        free(argv[i]);
+    }
+    free(argv);*/
+
+    return env->NewStringUTF("test");
 }
 
 #ifdef _WIN32

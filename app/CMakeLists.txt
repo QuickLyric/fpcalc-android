@@ -7,9 +7,9 @@ find_library(
               log )
 
 
-add_library(lib_chromaprint SHARED IMPORTED)
+add_library(lib_chromaprint STATIC IMPORTED)
 set_target_properties(lib_chromaprint PROPERTIES IMPORTED_LOCATION
-${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libchromaprint.so)
+${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libchromaprint.a)
 
 add_library(lib_swresample STATIC IMPORTED)
 set_target_properties(lib_swresample PROPERTIES IMPORTED_LOCATION
@@ -33,7 +33,7 @@ ${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libavutil.a)
 add_library(
              fpcalc
              SHARED
-             src/main/cpp/fpcalc.cpp )
+             src/main/cpp/fpcalc.cpp)
 
 target_include_directories(fpcalc PRIVATE ${CMAKE_SOURCE_DIR}/libs/include)
 
