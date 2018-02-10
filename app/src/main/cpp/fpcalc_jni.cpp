@@ -2,12 +2,16 @@
 #include <stdlib.h>
 #include <cstring>
 #include <vector>
+#include <android/log.h>
 
-JNIEXPORT jstring JNICALL fpCalc(JNIEnv *env, jobject obj, jobjectArray args);
+#define LOGI(...)   __android_log_print((int)ANDROID_LOG_INFO, "CHROMAPRINT", __VA_ARGS__)
+
+extern "C"
+JNIEXPORT jstring JNICALL fpCalcNative(JNIEnv *env, jobject obj, jobjectArray args);
 // forward declaration
 
 JNINativeMethod library_methods[] = {
-        {"fpCalc", "([Ljava/lang/String;)Ljava/lang/String;", (void*)fpCalc } };
+        {"fpCalcNative", "([Ljava/lang/String;)Ljava/lang/String;", (void*)fpCalcNative } };
 
 jsize library_methods_size = sizeof(library_methods) / sizeof(JNINativeMethod);
 
@@ -41,7 +45,7 @@ extern "C"
 JNIEXPORT jstring
 
 JNICALL
-fpCalc(JNIEnv *env, jobject thiz, jobjectArray args) {
+fpCalcNative(JNIEnv *env, jobject thiz, jobjectArray args) {
     int i;
     int argc = env->GetArrayLength(args) + 1;
     char **argv = new char*[argc];
@@ -60,8 +64,8 @@ fpCalc(JNIEnv *env, jobject thiz, jobjectArray args) {
         env->DeleteLocalRef(js);
         argvadd.push_back(argv[i]);
     }
-
     int rslt = fpcalc_main(argc,argv);
+
     if (rslt == 1)
     {
         jni_output("error_fpcalc_main=%d\n",rslt);

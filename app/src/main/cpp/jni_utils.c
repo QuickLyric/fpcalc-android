@@ -74,7 +74,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <jni.h>
-#include <cstring>
+#include <string.h>
 
 
 #ifdef JNI_LOGGING
@@ -137,19 +137,19 @@ char *getLoaderClass(JNIEnv* env)
     jni_log("getLoaderClass called");
     char *the_class_name = NULL;
 
-    jclass thread_class = env->FindClass("java/lang/Thread");
+    jclass thread_class = (*env)->FindClass(env,"java/lang/Thread");
     if (!thread_class)
     {
         jni_log("getLoaderClass Could not find /java/lang/Thread class");
         goto done;
     }
-    jclass stack_trace_element_class = env->FindClass("java/lang/StackTraceElement");
+    jclass stack_trace_element_class = (*env)->FindClass(env,"java/lang/StackTraceElement");
     if (!stack_trace_element_class)
     {
         jni_log("getLoaderClass Could not find java/lang/StackTraceElement class");
         goto done;
     }
-    jmethodID getClassName = env->GetMethodID(stack_trace_element_class, "getClassName", "()Ljava/lang/String;");
+    jmethodID getClassName = (*env)->GetMethodID(env,stack_trace_element_class, "getClassName", "()Ljava/lang/String;");
     if (!getClassName)
     {
         jni_log("getLoaderClass Could not get java/lang/StackTraceElement/getClassName() method");
@@ -158,7 +158,7 @@ char *getLoaderClass(JNIEnv* env)
 
     // get the current thread and call getStackTrace
 
-    jmethodID currentThread = env->GetStaticMethodID(thread_class,
+    jmethodID currentThread = (*env)->GetStaticMethodID(env, thread_class,
                                                         "currentThread", "()Ljava/lang/Thread;");
     if (!currentThread)
     {
@@ -166,7 +166,7 @@ char *getLoaderClass(JNIEnv* env)
         goto done;
     }
     jni_log("getLoaderClass Calling java/lang/Thread/currentThread()");
-    jobject current_thread = env->CallStaticObjectMethod(thread_class,currentThread);
+    jobject current_thread = (*env)->CallStaticObjectMethod(env,thread_class,currentThread);
     jni_log("getLoaderClass Back from calling java/lang/Thread/currentThread()");
     if (!currentThread)
     {
@@ -174,7 +174,7 @@ char *getLoaderClass(JNIEnv* env)
         goto done;
     }
 
-    jmethodID getStackTrace = env->GetMethodID(thread_class,
+    jmethodID getStackTrace = (*env)->GetMethodID(env, thread_class,
                                                   "getStackTrace",
                                                   "()[Ljava/lang/StackTraceElement;");
     if (!getStackTrace)
@@ -183,7 +183,7 @@ char *getLoaderClass(JNIEnv* env)
         goto done;
     }
     jni_log("getLoaderClass Calling java/lang/Thread/getStackTrace()");
-    jarray stack_trace = (jarray) env->CallObjectMethod(current_thread, getStackTrace);
+    jarray stack_trace = (*env)->CallObjectMethod(env,current_thread,getStackTrace);
     jni_log("getLoaderClass Back from calling java/lang/Thread/getStackTrace()");
     if (!stack_trace)
     {
@@ -195,7 +195,7 @@ char *getLoaderClass(JNIEnv* env)
     // loop thru the trace
     //----------------------------
 
-    jsize trace_len = env->GetArrayLength(stack_trace);
+    jsize trace_len = (*env)->GetArrayLength(env,stack_trace);
     jni_log("getLoaderClass Trace has %d elements",trace_len);
 
     // jsize=1 to skip the call to getStackTrace itself
@@ -207,19 +207,19 @@ char *getLoaderClass(JNIEnv* env)
 
     for (i=1; i<trace_len; i++)
     {
-        trace_element = env->GetObjectArrayElement( (jobjectArray)stack_trace, i);
+        trace_element = (*env)->GetObjectArrayElement(env, stack_trace, i);
         if (!trace_element)
         {
             jni_log("getLoaderClass     could not get trace_element(%d)",i);
             break;
         }
-        j_class_name = (jstring) env->CallObjectMethod(trace_element,getClassName);
+        j_class_name = (jstring) (*env)->CallObjectMethod(env,trace_element,getClassName);
         if (!j_class_name)
         {
             jni_log("getLoaderClass     could not get trace_element j_class_name(%d)",i);
             break;
         }
-        class_name = env->GetStringUTFChars(j_class_name,0);
+        class_name = (*env)->GetStringUTFChars(env,j_class_name,0);
         if (!class_name)
         {
             jni_log("getLoaderClass     could not get convert trace_element j_class_name(%d) to char *",i);
@@ -230,13 +230,13 @@ char *getLoaderClass(JNIEnv* env)
         if (my_strcmpn(class_name,"java.lang.",10))
         {
             jni_log("getLoaderClass     FOUND the_class_name(%d)=%s",i,class_name);
-            the_class_name = (char*)malloc(strlen(class_name)+1);
+            the_class_name = malloc(strlen(class_name)+1);
             strcpy(the_class_name,class_name);
             break;
         }
 
-        env->ReleaseStringUTFChars(j_class_name,class_name);
-        env->DeleteLocalRef(trace_element);
+        (*env)->ReleaseStringUTFChars(env,j_class_name,class_name);
+        (*env)->DeleteLocalRef(env,trace_element);
 
         trace_element = NULL;
         j_class_name = NULL;
@@ -265,19 +265,19 @@ char *getLoaderClass(JNIEnv* env)
     done:	// cleanup (all local object references)
 
     if (trace_element)
-        env->DeleteLocalRef(trace_element);
+        (*env)->DeleteLocalRef(env,trace_element);
     if (class_name)
-        env->ReleaseStringUTFChars(j_class_name,class_name);
+        (*env)->ReleaseStringUTFChars(env,j_class_name,class_name);
     if (j_class_name)
-        env->DeleteLocalRef(j_class_name);
+        (*env)->DeleteLocalRef(env,j_class_name);
     if (stack_trace)
-        env->DeleteLocalRef(stack_trace);
+        (*env)->DeleteLocalRef(env,stack_trace);
     if (current_thread)
-        env->DeleteLocalRef(current_thread);
+        (*env)->DeleteLocalRef(env,current_thread);
     if (stack_trace_element_class)
-        env->DeleteLocalRef(stack_trace_element_class);
+        (*env)->DeleteLocalRef(env,stack_trace_element_class);
     if (thread_class)
-        env->DeleteLocalRef(thread_class);
+        (*env)->DeleteLocalRef(env,thread_class);
 
     return the_class_name;
 }
@@ -296,7 +296,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
     jint result = JNI_ERR;
     jni_log("JNI_OnLoad() called");
 
-    if (vm->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK)
+    if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_4) != JNI_OK)
     {
         jni_log("JNI_ONLOAD GetEnv() failed");
         goto done;
@@ -310,7 +310,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
         goto done;
     }
 
-    jclass activity_class = env->FindClass(the_class_name);
+    jclass activity_class = (*env)->FindClass(env,the_class_name);
     if (!activity_class)
     {
         jni_log("JNI_OnLoad() FindClass(%s) failed",the_class_name);
@@ -319,7 +319,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 
     // normal ending
 
-    env->RegisterNatives( activity_class, library_methods, library_methods_size );
+    (*env)->RegisterNatives(env, activity_class, library_methods, library_methods_size );
     jni_log("JNI_OnLoad(%s) succeeded",the_class_name);
 
     done:
@@ -327,7 +327,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
     if (the_class_name)
         free(the_class_name);
     if (activity_class)
-        env->DeleteLocalRef(activity_class);
+        (*env)->DeleteLocalRef(env,activity_class);
 
     return JNI_VERSION_1_4;
 }

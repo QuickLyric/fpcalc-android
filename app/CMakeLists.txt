@@ -31,7 +31,7 @@ add_library(
              SHARED
              src/main/cpp/fpcalc.cpp
              src/main/cpp/fpcalc_jni.cpp
-             src/main/cpp/jni_utils.cpp)
+             src/main/cpp/jni_utils.c)
 
 target_include_directories(fpcalc PRIVATE ${CMAKE_SOURCE_DIR}/libs/include)
 

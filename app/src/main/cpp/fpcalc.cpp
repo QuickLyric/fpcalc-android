@@ -9,9 +9,8 @@
 #include <jni.h>
 #include <string>
 #include <memory>
-#include <android/log.h>
 #include <vector>
-
+#include <android/log.h>
 #include <stdlib.h>
 
 #define LOGI(...)   __android_log_print((int)ANDROID_LOG_INFO, "CHROMAPRINT", __VA_ARGS__)
@@ -78,7 +77,7 @@ static void ParseOptions(int &argc, char **argv) {
                 g_input_channels = value;
             } else {
                 fprintf(stderr, "ERROR: The argument for %s must be a non-zero positive number\n", argv[i]);
-                exit(2);
+                return;
             }
             i++;
         } else if ((!strcmp(argv[i], "-rate") || !strcmp(argv[i], "-r")) && i + 1 < argc) {
@@ -87,7 +86,7 @@ static void ParseOptions(int &argc, char **argv) {
                 g_input_sample_rate = value;
             } else {
                 fprintf(stderr, "ERROR: The argument for %s must be a positive number\n", argv[i]);
-                exit(2);
+                return;
             }
             i++;
         } else if ((!strcmp(argv[i], "-length") || !strcmp(argv[i], "-t")) && i + 1 < argc) {
@@ -96,7 +95,7 @@ static void ParseOptions(int &argc, char **argv) {
                 g_max_duration = value;
             } else {
                 fprintf(stderr, "ERROR: The argument for %s must be a positive number\n", argv[i]);
-                exit(2);
+                return;
             }
             i++;
         } else if (!strcmp(argv[i], "-chunk") && i + 1 < argc) {
@@ -105,7 +104,7 @@ static void ParseOptions(int &argc, char **argv) {
                 g_max_chunk_duration = value;
             } else {
                 fprintf(stderr, "ERROR: The argument for %s must be a positive number\n", argv[i]);
-                exit(2);
+                return;
             }
             i++;
         } else if ((!strcmp(argv[i], "-algorithm") || !strcmp(argv[i], "-a")) && i + 1 < argc) {
@@ -114,7 +113,7 @@ static void ParseOptions(int &argc, char **argv) {
                 g_algorithm = (ChromaprintAlgorithm)(value - 1);
             } else {
                 fprintf(stderr, "ERROR: The argument for %s must be 1 - 5\n", argv[i]);
-                exit(2);
+                return;
             }
             i++;
         } else if (!strcmp(argv[i], "-text")) {
@@ -141,7 +140,7 @@ static void ParseOptions(int &argc, char **argv) {
             const auto len = strlen(argv[i]);
             if (len > 1 && argv[i][0] == '-') {
                 fprintf(stderr, "ERROR: Unknown option %s\n", argv[i]);
-                exit(2);
+                return;
             } else {
                 argv[j++] = argv[i];
             }
@@ -149,7 +148,7 @@ static void ParseOptions(int &argc, char **argv) {
     }
     if (j < 2) {
         fprintf(stderr, "ERROR: No input files\n");
-        exit(2);
+        return;
     }
     argc = j;
 }
@@ -162,12 +161,12 @@ void PrintResult(ChromaprintContext *ctx, FFmpegAudioReader &reader, bool first,
     int size;
     if (!chromaprint_get_raw_fingerprint_size(ctx, &size)) {
         fprintf(stderr, "ERROR: Could not get the fingerprinting size\n");
-        exit(2);
+        return;
     }
     if (size <= 0) {
         if (first) {
             fprintf(stderr, "ERROR: Empty fingerprint\n");
-            exit(2);
+            return;
         }
         return;
     }
@@ -178,7 +177,7 @@ void PrintResult(ChromaprintContext *ctx, FFmpegAudioReader &reader, bool first,
         int raw_fp_size = 0;
         if (!chromaprint_get_raw_fingerprint(ctx, &raw_fp_data, &raw_fp_size)) {
             fprintf(stderr, "ERROR: Could not get the fingerprinting\n");
-            exit(2);
+            return;
         }
         SCOPE_EXIT(chromaprint_dealloc(raw_fp_data));
         for (int i = 0; i < raw_fp_size; i++) {
@@ -193,7 +192,7 @@ void PrintResult(ChromaprintContext *ctx, FFmpegAudioReader &reader, bool first,
         char *tmp_fp2;
         if (!chromaprint_get_fingerprint(ctx, &tmp_fp2)) {
             fprintf(stderr, "ERROR: Could not get the fingerprinting\n");
-            exit(2);
+            return;
         }
         fp = tmp_fp2;
         dealloc_fp = true;
@@ -260,12 +259,12 @@ void ProcessFile(ChromaprintContext *ctx, FFmpegAudioReader &reader, const char 
 
     if (!reader.Open(file_name)) {
         fprintf(stderr, "ERROR: %s\n", reader.GetError().c_str());
-        exit(2);
+        return;
     }
 
     if (!chromaprint_start(ctx, reader.GetSampleRate(), reader.GetChannels())) {
         fprintf(stderr, "ERROR: Could not initialize the fingerprinting process\n");
-        exit(2);
+        return;
     }
 
     size_t stream_size = 0;
@@ -324,7 +323,7 @@ void ProcessFile(ChromaprintContext *ctx, FFmpegAudioReader &reader, const char 
 
         if (!chromaprint_feed(ctx, frame_data, first_part_size * reader.GetChannels())) {
             fprintf(stderr, "ERROR: Could not process audio data\n");
-            exit(2);
+            return;
         }
 
         chunk_size += first_part_size;
@@ -332,7 +331,7 @@ void ProcessFile(ChromaprintContext *ctx, FFmpegAudioReader &reader, const char 
         if (chunk_done) {
             if (!chromaprint_finish(ctx)) {
                 fprintf(stderr, "ERROR: Could not finish the fingerprinting process\n");
-                exit(2);
+                return;
             }
 
             const auto chunk_duration = (chunk_size - extra_chunk_limit) * 1.0 / reader.GetSampleRate() + overlap;
@@ -348,13 +347,13 @@ void ProcessFile(ChromaprintContext *ctx, FFmpegAudioReader &reader, const char 
             if (g_overlap) {
                 if (!chromaprint_clear_fingerprint(ctx)) {
                     fprintf(stderr, "ERROR: Could not initialize the fingerprinting process\n");
-                    exit(2);
+                    return;
                 }
                 ts -= overlap;
             } else {
                 if (!chromaprint_start(ctx, reader.GetSampleRate(), reader.GetChannels())) {
                     fprintf(stderr, "ERROR: Could not initialize the fingerprinting process\n");
-                    exit(2);
+                    return;
                 }
             }
 
@@ -372,7 +371,7 @@ void ProcessFile(ChromaprintContext *ctx, FFmpegAudioReader &reader, const char 
         if (frame_size > 0) {
             if (!chromaprint_feed(ctx, frame_data, frame_size * reader.GetChannels())) {
                 fprintf(stderr, "ERROR: Could not process audio data\n");
-                exit(2);
+                return;
             }
         }
 
@@ -385,7 +384,7 @@ void ProcessFile(ChromaprintContext *ctx, FFmpegAudioReader &reader, const char 
 
     if (!chromaprint_finish(ctx)) {
         fprintf(stderr, "ERROR: Could not finish the fingerprinting process\n");
-        exit(2);
+        return;
     }
 
     if (chunk_size > 0) {
@@ -394,7 +393,7 @@ void ProcessFile(ChromaprintContext *ctx, FFmpegAudioReader &reader, const char 
         got_results = true;
     } else if (first_chunk) {
         fprintf(stderr, "ERROR: Not enough audio data\n");
-        exit(2);
+        return;
     }
 
     if (!g_ignore_errors) {
@@ -432,10 +431,8 @@ int fpcalc_main(int argc, char **argv) {
 
     reader.SetOutputChannels(chromaprint_get_num_channels(chromaprint_ctx));
     reader.SetOutputSampleRate(chromaprint_get_sample_rate(chromaprint_ctx));
-
     for (int i = 1; i < argc; i++) {
         ProcessFile(chromaprint_ctx, reader, argv[i]);
     }
-
     return 0;
 }
