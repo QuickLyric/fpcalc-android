@@ -1,11 +1,7 @@
 cmake_minimum_required(VERSION 3.4.1)
 
-
-
-find_library(
-              log-lib
+find_library(log-lib
               log )
-
 
 add_library(lib_chromaprint STATIC IMPORTED)
 set_target_properties(lib_chromaprint PROPERTIES IMPORTED_LOCATION
@@ -38,8 +34,8 @@ add_library(
 target_include_directories(fpcalc PRIVATE ${CMAKE_SOURCE_DIR}/libs/include)
 
 target_link_libraries( fpcalc
-                       lib_chromaprint
                        log
+                       lib_chromaprint
                        lib_avformat
                        lib_avcodec
                        lib_avutil

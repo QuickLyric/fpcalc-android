@@ -8,12 +8,23 @@
 #include "utils/scope_exit.h"
 #include <jni.h>
 #include <string>
+#include <memory>
+#include <android/log.h>
+#include <vector>
 
 #include <stdlib.h>
+
+#define LOGI(...)   __android_log_print((int)ANDROID_LOG_INFO, "SOUNDPROCESS", __VA_ARGS__)
 
 
 #ifdef _WIN32
 #include <windows.h>
+#endif
+#define JNI true
+#ifdef JNI
+extern void jni_output(const char* format, ...);
+	#define fprintf(unused,...) jni_output(__VA_ARGS__)
+	#define printf(...)         jni_output(__VA_ARGS__)
 #endif
 
 using namespace chromaprint;
@@ -435,7 +446,7 @@ int fpcalc_main(int argc, char **argv) {
     return 0;
 }
 
-static char *retval = NULL;;
+static char *retval = NULL;
 char * append_string(char * old, const char * newone)
 {
 const size_t old_len = old ? strlen(old) : 0;
@@ -463,41 +474,45 @@ extern "C"
 JNIEXPORT jstring
 
 JNICALL
-Java_com_geecko_fpcalc_MainActivity_fpCalc(
+Java_com_geecko_QuickLyric_utils_Chromaprint_fpCalc(
         JNIEnv *env,
         jobject thiz,
         jobjectArray args) {
     int i;
     int argc = env->GetArrayLength(args) + 1;
-    char **argv = (char**)malloc(argc * sizeof(char *));
-    argv[0] = (char *) "fpCalc";
+    char **argv = new char*[argc];
+    std::vector<char*> argvadd;
+    argv[0] = new char[7];
+    strcpy(argv[0],"fpCalc");
+    argvadd.push_back(argv[0]);
     retval = NULL;
     for (i=1; i<argc; i++)
     {
         jstring js = (jstring)env->GetObjectArrayElement(args,i-1);
-        char *cs = (char *)env->GetStringUTFChars(js, 0);
-        argv[i] = (char*)malloc(strlen(cs) + 1);
+        const char *cs = env->GetStringUTFChars(js, 0);
+        argv[i] = new char[strlen(cs) + 1];
         strcpy(argv[i],cs);
         env->ReleaseStringUTFChars(js, cs);
         env->DeleteLocalRef(js);
+        argvadd.push_back(argv[i]);
     }
 
     int rslt = fpcalc_main(argc,argv);
-   /* if (rslt == 1)
+    if (rslt == 1)
     {
         jni_output("error_fpcalc_main=%d\n",rslt);
     }
     jstring final_result_value = env->NewStringUTF(retval);
-    free(retval);
+    delete retval;
     retval = NULL;
 
-    for (i=1; i<argc; i++)
+    for (i=0; i<argc; i++)
     {
-        free(argv[i]);
+        delete[] argvadd[i];
     }
-    free(argv);*/
+    delete[] argv;
 
-    return env->NewStringUTF("test");
+    return final_result_value;
 }
 
 #ifdef _WIN32
