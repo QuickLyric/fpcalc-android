@@ -14,18 +14,12 @@
 
 #include <stdlib.h>
 
-#define LOGI(...)   __android_log_print((int)ANDROID_LOG_INFO, "SOUNDPROCESS", __VA_ARGS__)
+#define LOGI(...)   __android_log_print((int)ANDROID_LOG_INFO, "CHROMAPRINT", __VA_ARGS__)
 
-
-#ifdef _WIN32
-#include <windows.h>
-#endif
-#define JNI true
-#ifdef JNI
 extern void jni_output(const char* format, ...);
 	#define fprintf(unused,...) jni_output(__VA_ARGS__)
 	#define printf(...)         jni_output(__VA_ARGS__)
-#endif
+
 
 using namespace chromaprint;
 
@@ -445,99 +439,3 @@ int fpcalc_main(int argc, char **argv) {
 
     return 0;
 }
-
-static char *retval = NULL;
-char * append_string(char * old, const char * newone)
-{
-const size_t old_len = old ? strlen(old) : 0;
-const size_t newone_len = strlen(newone);
-const size_t out_len = old_len + newone_len + 1;
-char *out = (char*)malloc(out_len);
-if (old_len) memcpy(out, old, old_len);
-memcpy(out + old_len, newone, newone_len + 1);
-if (old_len) free(old);
-return out;
-}
-
-void jni_output(const char* format, ...)
-{
-    va_list argptr;
-    va_start(argptr, format);
-    int size = vsnprintf(NULL, 0, format, argptr);
-    char buffer[size + 1];
-    vsprintf(buffer, format, argptr);
-    retval = append_string(retval,buffer);
-    va_end(argptr);
-}
-
-extern "C"
-JNIEXPORT jstring
-
-JNICALL
-Java_com_geecko_QuickLyric_utils_Chromaprint_fpCalc(
-        JNIEnv *env,
-        jobject thiz,
-        jobjectArray args) {
-    int i;
-    int argc = env->GetArrayLength(args) + 1;
-    char **argv = new char*[argc];
-    std::vector<char*> argvadd;
-    argv[0] = new char[7];
-    strcpy(argv[0],"fpCalc");
-    argvadd.push_back(argv[0]);
-    retval = NULL;
-    for (i=1; i<argc; i++)
-    {
-        jstring js = (jstring)env->GetObjectArrayElement(args,i-1);
-        const char *cs = env->GetStringUTFChars(js, 0);
-        argv[i] = new char[strlen(cs) + 1];
-        strcpy(argv[i],cs);
-        env->ReleaseStringUTFChars(js, cs);
-        env->DeleteLocalRef(js);
-        argvadd.push_back(argv[i]);
-    }
-
-    int rslt = fpcalc_main(argc,argv);
-    if (rslt == 1)
-    {
-        jni_output("error_fpcalc_main=%d\n",rslt);
-    }
-    jstring final_result_value = env->NewStringUTF(retval);
-    delete retval;
-    retval = NULL;
-
-    for (i=0; i<argc; i++)
-    {
-        delete[] argvadd[i];
-    }
-    delete[] argv;
-
-    return final_result_value;
-}
-
-#ifdef _WIN32
-int main(int win32_argc, char **win32_argv)
-{
-	int i, argc = 0, buffsize = 0, offset = 0;
-	char **utf8_argv, *utf8_argv_ptr;
-	wchar_t **argv;
-	argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-	buffsize = 0;
-	for (i = 0; i < argc; i++) {
-		buffsize += WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, NULL, 0, NULL, NULL);
-	}
-	utf8_argv = (char **) av_mallocz(sizeof(char *) * (argc + 1) + buffsize);
-	utf8_argv_ptr = (char *) utf8_argv + sizeof(char *) * (argc + 1);
-	for (i = 0; i < argc; i++) {
-		utf8_argv[i] = &utf8_argv_ptr[offset];
-		offset += WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, &utf8_argv_ptr[offset], buffsize - offset, NULL, NULL);
-	}
-	LocalFree(argv);
-	return fpcalc_main(argc, utf8_argv);
-}
-#else
-int main(int argc, char **argv)
-{
-    return fpcalc_main(argc, argv);
-}
-#endif

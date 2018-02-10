@@ -29,7 +29,9 @@ ${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libavutil.a)
 add_library(
              fpcalc
              SHARED
-             src/main/cpp/fpcalc.cpp)
+             src/main/cpp/fpcalc.cpp
+             src/main/cpp/fpcalc_jni.cpp
+             src/main/cpp/jni_utils.cpp)
 
 target_include_directories(fpcalc PRIVATE ${CMAKE_SOURCE_DIR}/libs/include)
 
