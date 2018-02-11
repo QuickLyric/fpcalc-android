@@ -19,3 +19,5 @@ String result = FpCalc.fpCalc(args);
 ```
 
 Currently using Chromaprint v1.4.3 and ffmpeg 3.2.10.
+
+Provides "arm64-v8a", "armeabi-v7a", "x86", and "x86_64" builds.
