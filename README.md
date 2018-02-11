@@ -11,7 +11,7 @@ dependencies {
 }
 ```
 
-Pass ```String[]``` to ```FpCalc.fpCalc``` in command line format, ig:
+Pass ```String[]``` to ```FpCalc.fpCalc()``` in command line format, ig:
 
 ```
 String[] args = {"-length", "16", pathToFile};
