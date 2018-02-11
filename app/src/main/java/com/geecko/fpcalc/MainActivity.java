@@ -5,9 +5,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 
-public class MainActivity extends Activity {
+import static com.geecko.fpcalc.FpCalc.fpCalc;
 
-    private static native String fpCalcNative(String[] args);
+public class MainActivity extends Activity {
 
     // Used to load the 'native-lib' library on application startup.
     static {
@@ -30,7 +30,7 @@ public class MainActivity extends Activity {
         String output;
         try {
             long startTime = System.nanoTime();
-            output = fpCalcNative(args);
+            output = fpCalc(args);
             long endTime = System.nanoTime();
             long duration = (endTime - startTime) / 1000000;
             if (path.toLowerCase().contains("spell")) Log.d("qllogging", "" + duration);

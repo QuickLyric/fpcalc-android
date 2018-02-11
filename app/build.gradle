@@ -1,9 +1,8 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 26
     defaultConfig {
-        applicationId "com.geecko.fpcalc"
         minSdkVersion 14
         targetSdkVersion 26
         versionCode 1
@@ -12,7 +11,6 @@ android {
         externalNativeBuild {
             sourceSets {
                 main {
-                    // let gradle pack the shared library into apk
                     jniLibs.srcDirs = ['libs']
                 }
             }
@@ -21,8 +19,6 @@ android {
             }
         }
         ndk {
-            // Specifies the ABI configurations of your native
-            // libraries Gradle should build and package with your APK.
             abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
         }
     }

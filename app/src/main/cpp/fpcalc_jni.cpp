@@ -6,15 +6,6 @@
 
 #define LOGI(...)   __android_log_print((int)ANDROID_LOG_INFO, "CHROMAPRINT", __VA_ARGS__)
 
-extern "C"
-JNIEXPORT jstring JNICALL fpCalcNative(JNIEnv *env, jobject obj, jobjectArray args);
-// forward declaration
-
-JNINativeMethod library_methods[] = {
-        {"fpCalcNative", "([Ljava/lang/String;)Ljava/lang/String;", (void*)fpCalcNative } };
-
-jsize library_methods_size = sizeof(library_methods) / sizeof(JNINativeMethod);
-
 extern int fpcalc_main(int argc, char **argv);
 
 static char *retval = NULL;
@@ -45,7 +36,7 @@ extern "C"
 JNIEXPORT jstring
 
 JNICALL
-fpCalcNative(JNIEnv *env, jobject thiz, jobjectArray args) {
+Java_com_geecko_fpcalc_FpCalc_fpCalc(JNIEnv *env, jobject thiz, jobjectArray args) {
     int i;
     int argc = env->GetArrayLength(args) + 1;
     char **argv = new char*[argc];
