@@ -21,7 +21,7 @@ public class MainActivity extends Activity {
 
         // Example of a call to a native method
         TextView tv = (TextView) findViewById(R.id.sample_text);
-        Log.i("FINGERPRINT", "test" + fpcalc("/storage/emulated/0/Download/2_Under_Your_Spell.mp3"));
+        Log.i("FINGERPRINT", "test" + fpcalc("/sdcard/Download/02 Under Your Spell.mp3"));
 
     }
     private static String fpcalc(String path) {
