@@ -7,7 +7,7 @@ Usage:
 
 ```
 dependencies {
-  implementation 'com.github.QuickLyric:fpcalc-android:1.0.0'
+  implementation 'com.github.QuickLyric:fpcalc-android:1.0.1'
 }
 ```
 
