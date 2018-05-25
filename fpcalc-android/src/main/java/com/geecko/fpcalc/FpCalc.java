@@ -6,7 +6,11 @@ package com.geecko.fpcalc;
 
 public class FpCalc {
     static {
-        System.loadLibrary("fpcalc");
+        try {
+            System.loadLibrary("fpcalc");
+        } catch (UnsatisfiedLinkError | SecurityException e) {
+            e.printStackTrace();
+        }
     }
     public static native String fpCalc(String[] args);
 }
